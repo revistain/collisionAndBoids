@@ -37,18 +37,44 @@ class Canvas {
             drawable.draw();
         }
     }
+    move(){
+        for(let movable of Movable.movablelist){
+            // movable.applyForce(new Vector2(0.001, 0.001));
+            movable.update();
+        }
+    }
 
     update() {
+        this.move();
         this.draw();
     }
 }
 
 window.onload = function() {
     const canvas = new Canvas();
-    const a = new MouseManager();
+    const mm = new MouseManager();
+    const qt = new QuadTree();
+    
     createUnitAtTile(3, 3);
     createUnitAtTile(3, 14);
     createWallAtTile(0, 0, 1, 3);
     
     canvas.startLoop();
 };
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  
+  // 무작위 정수 x와 y 얻기
+  const x = getRandomInt(0, 31);
+  const y = getRandomInt(0, 31);
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'U' || event.key === 'u') {
+        
+        createUnitAtTile(getRandomInt(0, 31), getRandomInt(0,31));
+    }
+  });

@@ -2,22 +2,36 @@ class Vector2 {
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
+        return this;
+    }
+    set(x, y){
+        this.x = x;
+        this.y = y;
     }
     assign(v){
         this.x = v.x;
         this.y = v.y;
+        return this;
     }
     add(v) {
-        return new Vector2(this.x + v.x, this.y + v.y);
+        this.x += v.x;
+        this.y += v.y;
+        return this;
     }
     sub(v) {
-        return new Vector2(this.x - v.x, this.y - v.y);
+        this.x -= v.x;
+        this.y -= v.y;
+        return this;
     }
     mul(scalar) {
-        return new Vector2(this.x * scalar, this.y * scalar);
+        this.x *= v.x;
+        this.y *= v.y;
+        return this;
     }
     div(vec){
-        return new Vector2(this.x / vec, this.y / vec);
+        this.x /= v.x;
+        this.y /= v.y;
+        return this;
     }
     magnitude() {
         return Math.sqrt(this.x * this.x + this.y * this.y);

@@ -39,12 +39,14 @@ class Movable extends Drawable {
         Movable.movablelist.push(this);
         this.currentSpeed = currentSpeed;
         this.maxSpeed = maxSpeed;
-        this.accel = accel;
+        if(accel != 0)this.accel = accel;
+        else this.accel = new Vector2(0, 0);
         this.moveid = Movable.counter++;
     }
     move() {
-        this.currentSpeed.add(this.accel);
+        this.currentSpeed = this.currentSpeed.add(this.accel);
         this.currentSpeed.limit(this.maxSpeed);
+        this.pos.add(this.currentSpeed);
     }
     remove() {
         Movable.movablelist = Movable.movablelistfilter(movable => movable.moveid !== this.moveid);
@@ -53,14 +55,16 @@ class Movable extends Drawable {
         this.accel.add(force);
     }
     update() {
-        move();
-        this.accel.setMagnitude(0);
+        insertToQuadTree(this);
+        this.move();
+        this.accel.set(0, 0);
     }
 }
 
 class Unit extends Movable {
     constructor(pos) {
-        super(pos, 6, "circle", "red", 1, 4);
+        const initSpeed = new Vector2(0, 0);
+        super(pos, 6, "circle", "red", initSpeed, 4, new Vector2(0, 0));
     }
 }
 
