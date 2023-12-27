@@ -42,6 +42,8 @@ class Movable extends Drawable {
         if(accel != 0)this.accel = accel;
         else this.accel = new Vector2(0, 0);
         this.moveid = Movable.counter++;
+        
+        insertToQuadTree(this);
     }
     move() {
         this.currentSpeed = this.currentSpeed.add(this.accel);
@@ -55,7 +57,6 @@ class Movable extends Drawable {
         this.accel.add(force);
     }
     update() {
-        insertToQuadTree(this);
         this.move();
         this.accel.set(0, 0);
     }

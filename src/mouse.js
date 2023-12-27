@@ -10,6 +10,7 @@ class MouseManager extends Drawable{
         this.canvas.addEventListener('mousedown', (event) => {
             this.isDragging = true;
             this.pos = this.getMousePosition(event);
+            this.currentPos = this.pos;
             Drawable.drawablelist.push(this);
         });
 
@@ -24,7 +25,12 @@ class MouseManager extends Drawable{
 
         this.canvas.addEventListener('mouseup', () => {
             this.stopDraw();
+            const objs = this.findObjectAtBox();
+            console.log("found: ", objs);
             // select units
+            for(let obj of objs){
+                obj.color = "blue";
+            }
         });
     }
     stopDraw() {
@@ -41,7 +47,14 @@ class MouseManager extends Drawable{
         if(isOutOfBoundary) this.stopDraw();
         return new Vector2(mouseX, mouseY);
     }
+    findObjectAtBox() {
+        const top = Math.min(this.currentPos.y, this.pos.y);
+        const left = Math.min(this.currentPos.x, this.pos.x);
+        const right = Math.max(this.currentPos.x, this.pos.x);
+        const down = Math.max(this.currentPos.y, this.pos.y);
 
+        return quadTreeQuery(top, left, down, right);
+    }
     
     draw() {
         this.ctx.fillStyle = 'rgba(0, 255, 255, 0.2)'; // Cyan color with 20% opacity
