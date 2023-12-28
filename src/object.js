@@ -3,7 +3,14 @@ class Drawable {
     static drawablelist = [];
     constructor(pos, radius, style, color, width=0, height=0, lazyDraw=false) {
         if(!lazyDraw) Drawable.drawablelist.push(this);
-        this.pos = pos;
+        if(pos === null){
+            this.pos = null;
+        }
+        else{
+            this.pos = pos;
+            this.pos.x += radius;
+            this.pos.y += radius;
+        }
         this.radius = radius;
         this.style = style;
         this.color = color;
@@ -43,15 +50,29 @@ class Movable extends Drawable {
         else this.accel = new Vector2(0, 0);
         this.moveid = Movable.counter++;
         
+        this.currentQuad = null;
         insertToQuadTree(this);
+    }
+    moveOfBound(movable){
+        if(movable.pos.x > Canvas.instance.pixelX) movable.pos.x -= Canvas.instance.pixelX;
+        else if(movable.pos.x < 0) movable.pos.x += Canvas.instance.pixelX;
+        if(movable.pos.y > Canvas.instance.pixelY) movable.pos.y -= Canvas.instance.pixelY;
+        else if(movable.pos.y < 0) movable.pos.y += Canvas.instance.pixelY;
+
     }
     move() {
         this.currentSpeed = this.currentSpeed.add(this.accel);
         this.currentSpeed.limit(this.maxSpeed);
         this.pos.add(this.currentSpeed);
+        this.moveOfBound(this);
+        if(!this.currentSpeed.equals(0, 0)){
+            removeObjectFromQuadTree(this);
+            insertToQuadTree(this);
+        }
     }
     remove() {
-        Movable.movablelist = Movable.movablelistfilter(movable => movable.moveid !== this.moveid);
+        Movable.movablelist = Movable.movablelist.filter(movable => movable.moveid !== this.moveid);
+        super.remove();
     }
     applyForce(force) {
         this.accel.add(force);
@@ -77,7 +98,7 @@ class Wall extends Drawable {
 
 function createUnitAtTile(tileX, tileY) {
     const createPos = new Vector2(tileX*Canvas.instance.tilePixel, tileY*Canvas.instance.tilePixel);
-    return new Unit(createPos);
+    return new CircleBoid(createPos);
 }
 
 function createWallAtTile(tileX, tileY, amountX, amountY) {

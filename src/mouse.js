@@ -26,10 +26,10 @@ class MouseManager extends Drawable{
         this.canvas.addEventListener('mouseup', () => {
             this.stopDraw();
             const objs = this.findObjectAtBox();
-            console.log("found: ", objs);
             // select units
             for(let obj of objs){
-                obj.color = "blue";
+                removeObjectFromQuadTree(obj);
+                obj.remove();
             }
         });
     }
