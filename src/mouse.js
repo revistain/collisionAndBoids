@@ -39,7 +39,6 @@ class MouseManager extends Drawable{
             
             for(let obj of objs){
                 obj.color = "blue";
-                obj.currentSpeed.mul_var(0);
                 MouseManager.selected.push(obj);
             }
         });
@@ -78,3 +77,9 @@ class MouseManager extends Drawable{
     }
 }
 
+function removeSelected(){
+    for(let obj of MouseManager.selected){
+        removeObjectFromQuadTree(obj);
+        obj.remove();
+    }
+}
