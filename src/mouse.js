@@ -1,7 +1,8 @@
 class MouseManager extends Drawable{
+    static selected = [];
     constructor() {
         super(null, 0, "rect", "black", 0, 0, true);
-        
+
         if (!MouseManager.instance) MouseManager.instance = this;
         this.isDragging = false;
         this.currentPos = null;
@@ -12,6 +13,10 @@ class MouseManager extends Drawable{
             this.pos = this.getMousePosition(event);
             this.currentPos = this.pos;
             Drawable.drawablelist.push(this);
+            for(let obj of MouseManager.selected){
+                obj.color = "red";
+            }
+            MouseManager.selected.length = 0;
         });
 
         this.canvas.addEventListener('mousemove', (event) => {
@@ -26,10 +31,16 @@ class MouseManager extends Drawable{
         this.canvas.addEventListener('mouseup', () => {
             this.stopDraw();
             const objs = this.findObjectAtBox();
-            console.log("found: ", objs);
-            // select units
+            // Drag removable
+            // for(let obj of objs){
+            //     removeObjectFromQuadTree(obj);
+            //     obj.remove();
+            // }
+            
             for(let obj of objs){
                 obj.color = "blue";
+                obj.currentSpeed.mul_var(0);
+                MouseManager.selected.push(obj);
             }
         });
     }

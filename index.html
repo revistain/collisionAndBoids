@@ -1,14 +1,76 @@
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>test</title>
-    </head>
-    <body>
-        <canvas width="512" height="512"  style="border:1px solid #000000;"></canvas>
-       
-        <script src="src/object.js"></script>
-        <script src="src/vector.js"></script>
-        <script src="src/mouse.js"></script>
-        <script src="src/find.js"></script>
-        <script src="src/canvas.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <title>test</title>
+    <style>
+        .slider-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .slider-label {
+            width: 100px;
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="512" height="512" style="border:1px solid #000000;"></canvas>
+    <div class="slider-container">
+        <div class="slider-label">Alignment:</div>
+        <input type="range" id="alignSlider" min="0.001" max="0.1" step="0.005" value="0.001">
+        <span id="alignValue">0.001</span>
+
+        <div class="slider-label">Cohesion:</div>
+        <input type="range" id="cohesionSlider" min="0.001" max="0.1" step="0.005" value="0.001">
+        <span id="cohesionValue">0.001</span>
+
+        <div class="slider-label">Separation:</div>
+        <input type="range" id="separationSlider" min="0.001" max="1" step="0.05" value="0.05">
+        <span id="separationValue">0.05</span>
+    </div>
+
+    <script src="src/object.js"></script>
+    <script src="src/vector.js"></script>
+    <script src="src/mouse.js"></script>
+    <script src="src/find.js"></script>
+    <script src="src/pathfinding.js"></script>
+    <script src="src/heap.js"></script>
+    <script src="src/boid.js"></script>
+    <script src="src/canvas.js"></script>
+
+    <p>Press U to create, Drag to remove!</p>
+    <button id="gridToggle">그리드 토글</button>
+    
+    <script>
+        const button = document.getElementById('gridToggle');
+        button.addEventListener('click', () => {
+            Rect.debugGridOn = !Rect.debugGridOn;
+            console.log(Rect.debugGridOn);
+        });
+
+        const alignSlider = document.getElementById('alignSlider');
+        const alignValue = document.getElementById('alignValue');
+        const cohesionSlider = document.getElementById('cohesionSlider');
+        const cohesionValue = document.getElementById('cohesionValue');
+        const separationSlider = document.getElementById('separationSlider');
+        const separationValue = document.getElementById('separationValue');
+
+        alignSlider.addEventListener('input', () => {
+            CircleBoid.align = parseFloat(alignSlider.value);
+            alignValue.innerText = CircleBoid.align;
+        });
+
+        cohesionSlider.addEventListener('input', () => {
+            CircleBoid.cohesion = parseFloat(cohesionSlider.value);
+            cohesionValue.innerText = CircleBoid.cohesion;
+        });
+
+        separationSlider.addEventListener('input', () => {
+            CircleBoid.separation = parseFloat(separationSlider.value);
+            separationValue.innerText = CircleBoid.separation;
+        });
+        // TODO: 인지거리도 추가
+    </script>
+</body>
 </html>

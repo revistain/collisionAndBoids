@@ -8,6 +8,9 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+    equals(x, y){
+        return (this.x == x && this.y == y);
+    }
     assign(v){
         this.x = v.x;
         this.y = v.y;
@@ -23,14 +26,21 @@ class Vector2 {
         this.y -= v.y;
         return this;
     }
-    mul(scalar) {
-        this.x *= v.x;
-        this.y *= v.y;
+    mul_var(scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
         return this;
     }
     div(vec){
-        this.x /= v.x;
-        this.y /= v.y;
+        if(vec.x === 0 || vec.y === 0) return;
+        this.x /= vec.x;
+        this.y /= vec.y;
+        return this;
+    }
+    div_var(scalar){
+        if(scalar === 0) return;
+        this.x /= scalar;
+        this.y /= scalar;
         return this;
     }
     magnitude() {
@@ -52,5 +62,12 @@ class Vector2 {
     normalize() {
         const mag = this.magnitude();
         return mag > 0 ? new Vector2(this.x / mag, this.y / mag) : new Vector2();
+    }
+}
+
+function removeElemFromList(array, element) {
+    const index = array.indexOf(element);
+    if (index > -1) {
+        array.splice(index, 1);
     }
 }

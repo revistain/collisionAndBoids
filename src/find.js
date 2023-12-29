@@ -3,6 +3,7 @@
 // quadtree를 구현해보자
 
 class Rect extends Drawable{
+    static debugGridOn = false;
     constructor(top=0, left=0, down=0, right=0) {
         /////////// for debug draw //////////////
         super(new Vector2(top, left), 0, "rect", null, right-left, down-top, false);
@@ -14,14 +15,18 @@ class Rect extends Drawable{
         this.halfwidth = (this.right - this.left) >> 1;
         this.halfheight = (this.down - this.top) >> 1;
         
-        this.randomcolorA = Math.random() * 155+100;
-        this.randomcolorB = Math.random() * 155+100;
-        this.randomcolorC = Math.random() * 155+100;
+        this.randomcolorA = Math.random() * 155 + 100;
+        this.randomcolorB = Math.random() * 155 + 100;
+        this.randomcolorC = Math.random() * 155 + 100;
     }
+
     draw() {
-        this.ctx.fillStyle = `rgba(${this.randomcolorA}, ${this.randomcolorB}, ${this.randomcolorC}, 0.2)`;
-        this.ctx.strokeRect(this.left, this.top, this.right-this.left, this.down-this.top);
-        this.ctx.fillRect(this.left, this.top, this.right-this.left, this.down-this.top);
+        // 생각보다 그리드 그리는게 성능에 영향을 많이 끼치네
+        if(Rect.debugGridOn){
+            this.ctx.fillStyle = `rgba(${this.randomcolorA}, ${this.randomcolorB}, ${this.randomcolorC}, 0.2)`;
+            this.ctx.strokeRect(this.left, this.top, this.right-this.left, this.down-this.top);
+            this.ctx.fillRect(this.left, this.top, this.right-this.left, this.down-this.top);
+        }
     }
 
     includeDrawable(drawable) {
@@ -58,19 +63,30 @@ class QuadTree {
     static instance = null;
     constructor() {
         if(!QuadTree.instance) QuadTree.instance = this;
-        this.head = new QuadNode(0, 0, Canvas.instance.pixelX, Canvas.instance.pixelY);
+        this.head = new QuadNode(0, 0, 0, Canvas.instance.pixelX, Canvas.instance.pixelY);
+        this.MAX_DEPTH = 6;
     }
     insert(drawable) {
         if(this.head === null) console.log("WHAT??!?!?!");
         this.head.findInsert(drawable);
     }
-
+    _remove_object(obj){
+        if(obj.currentQuad === null) return;
+        removeElemFromList(obj.currentQuad.objects, obj);
+    }
 
     _Query(top, left, down, right) {
         const found = [];
         this.head.query(top, left, down, right, found);
         return found;
     }
+    update(){
+        collectEmptyQuads();
+    }
+}
+
+function collectEmptyQuads(){
+    QuadTree.instance.head._collectnulls();
 }
 
 function quadTreeQuery(top, left, down, right){
@@ -79,73 +95,66 @@ function quadTreeQuery(top, left, down, right){
 
 function insertToQuadTree(obj) {
     QuadTree.instance.insert(obj);
-    console.log("inserted");
+}
+
+function removeObjectFromQuadTree(obj){
+    QuadTree.instance._remove_object(obj);
 }
 
 class QuadNode {
-    constructor(top, left, down, right) {
+    constructor(depth, top, left, down, right) {
         this.rect = new Rect(top, left, down, right);
-        this.count = 0;
         this.capacity = 4;
         this.firstQuad      = null;
         this.secondQuad     = null;
         this.thirdQuad      = null;
         this.fourthQuad     = null;
         
+        this.depth = depth;
         this.isLeaf = true;
         this.objects = [];
     }
-    find(drawable) {
+    findNode(drawable) {
         if(!this.contains(drawable)) return null;
         
         let ret = null;
         if(!this.isLeaf){
             let result = null;
-            if((result = this.firstQuad.find(drawable)) !== null) ret = result
-            if((result = this.secondQuad.find(drawable)) !== null) ret = result
-            if((result = this.thirdQuad.find(drawable)) !== null) ret = result
-            if((result = this.fourthQuad.find(drawable)) !== null) ret = result
+            if((result = this.firstQuad.findNode(drawable)) !== null) ret = result
+            if((result = this.secondQuad.findNode(drawable)) !== null) ret = result
+            if((result = this.thirdQuad.findNode(drawable)) !== null) ret = result
+            if((result = this.fourthQuad.findNode(drawable)) !== null) ret = result
         }
         else if(this.isLeaf) { ret = this; }
-        console.log("find: ", ret);
         return ret;
     }
     findInsert(obj){
-        const leafNode = this.find(obj);
+        const leafNode = this.findNode(obj);
+        obj.currentQuad = leafNode;
+        
         leafNode.objects.push(obj);
-        leafNode.count += 1;
-        if(leafNode.count >= leafNode.capacity) {
+        if(this.depth < QuadTree.instance.MAX_DEPTH && leafNode.objects.length >= leafNode.capacity) {
             leafNode.subdivide();
-            leafNode.count = 0;
         }
     }
     contains(drawable) {
         return this.rect.includeDrawable(drawable);
     }
     subdivide() {
-        console.log("objects", this.objects);
-        this.firstQuad = new QuadNode(this.rect.top, this.rect.left+this.rect.halfwidth, this.rect.down-this.rect.halfheight, this.rect.right);
-        this.secondQuad = new QuadNode(this.rect.top, this.rect.left, this.rect.down-this.rect.halfheight, this.rect.right-this.rect.halfwidth);
-        this.thirdQuad = new QuadNode(this.rect.top+this.rect.halfheight, this.rect.left+this.rect.halfwidth, this.rect.down, this.rect.right);
-        this.fourthQuad = new QuadNode(this.rect.top+this.rect.halfheight, this.rect.left, this.rect.down, this.rect.right-this.rect.halfwidth); 
-        console.log(this.firstQuad, this.secondQuad, this.thirdQuad, this.fourthQuad);
+        this.firstQuad = new QuadNode(this.depth+1, this.rect.top, this.rect.left+this.rect.halfwidth, this.rect.down-this.rect.halfheight, this.rect.right);
+        this.secondQuad = new QuadNode(this.depth+1, this.rect.top, this.rect.left, this.rect.down-this.rect.halfheight, this.rect.right-this.rect.halfwidth);
+        this.thirdQuad = new QuadNode(this.depth+1, this.rect.top+this.rect.halfheight, this.rect.left, this.rect.down, this.rect.right-this.rect.halfwidth); 
+        this.fourthQuad = new QuadNode(this.depth+1, this.rect.top+this.rect.halfheight, this.rect.left+this.rect.halfwidth, this.rect.down, this.rect.right);
         this.isLeaf = false;
 
         for(let obj of this.objects){
-            if(obj !== null) {
-                this.findInsert(obj);
-            }
+            this.findInsert(obj);
         }
         this.objects.length = 0;
-        
     }
     query(top, left, down, right, found_list){
         if(!this.rect.intersects(top, left, down, right)) return null;
-        console.log("this.objects", this.objects);
-        
-        
         if(!this.isLeaf){
-            console.log(this);
             this.firstQuad.query(top, left, down, right, found_list);
             this.secondQuad.query(top, left, down, right, found_list);
             this.thirdQuad.query(top, left, down, right, found_list);
@@ -157,5 +166,29 @@ class QuadNode {
             }
         }
         return found_list;
+    }
+    _collectnulls(){
+        if(!this.isLeaf){
+            if(this.firstQuad.objects.length === 0 && this.secondQuad.objects.length === 0 && this.thirdQuad.objects.length === 0 && this.fourthQuad.objects.length === 0
+              && this.firstQuad.isLeaf && this.secondQuad.isLeaf && this.thirdQuad.isLeaf && this.fourthQuad.isLeaf){
+                this.firstQuad.rect.remove();
+                this.secondQuad.rect.remove();
+                this.thirdQuad.rect.remove();
+                this.fourthQuad.rect.remove();
+                this.firstQuad = null;
+                this.secondQuad = null;
+                this.thirdQuad = null;
+                this.fourthQuad = null;
+                this.isLeaf = true;
+            }
+            else{
+                this.firstQuad = this.firstQuad._collectnulls();
+                this.secondQuad = this.secondQuad._collectnulls();
+                this.thirdQuad = this.thirdQuad._collectnulls();
+                this.fourthQuad = this.fourthQuad._collectnulls();
+            }
+        }
+        return this;
+
     }
 }

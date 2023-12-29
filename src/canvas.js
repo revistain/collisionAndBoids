@@ -1,11 +1,18 @@
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'U' || event.key === 'u') {
+        
+        createUnitAtTile(getRandomInt(0, Canvas.instance.tileX - 1), getRandomInt(0,Canvas.instance.tileY - 1));
+    }
+ });
+
 class Canvas {
     constructor() {
         if (!Canvas.instance) Canvas.instance = this;
-        this.tileX = 32;
-        this.tileY = 32;
+        this.tileX = 64;
+        this.tileY = 64;
         this.tilePixel = 16;
-        this.pixelX = 32*16;
-        this.pixelY = 32*16;
+        this.pixelX = this.tileX*16;
+        this.pixelY = this.tileY*16;
         this.tileType = {
             "empty" : 0,
             "wall" : 1,
@@ -17,6 +24,8 @@ class Canvas {
 
         this.canvas = document.querySelector("canvas");
         this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = this.pixelX;
+        this.canvas.height = this.pixelY;
         this.animate = this.animate.bind(this);
     }
     setCollideMap(typestring, tileX, tileY, amountX, amountY) {
@@ -57,7 +66,7 @@ class Canvas {
     }
     move(){
         for(let movable of Movable.movablelist){
-            // movable.applyForce(new Vector2(0.0001, 0.0001));
+            // movable.applyForce(new Vector2(getRandomFloat(0.2, -0.1), getRandomFloat(0.2, -0.1)));
             movable.update();
         }
     }
@@ -65,6 +74,7 @@ class Canvas {
     update() {
         this.move();
         this.draw();
+        QuadTree.instance.update();
     }
 }
 
@@ -73,8 +83,7 @@ window.onload = function() {
     const qt = new QuadTree();
     const mm = new MouseManager();
     
-    createUnitAtTile(3, 3);
-    createUnitAtTile(3, 14);
+    // createUnitAtTile(15, 15);
     // createWallAtTile(0, 0, 1, 3);
     
     canvas.startLoop();
@@ -84,15 +93,9 @@ function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+}
   
-  // 무작위 정수 x와 y 얻기
-  const x = getRandomInt(0, 31);
-  const y = getRandomInt(0, 31);
+function getRandomFloat(range, start) {
+    return Math.random() * range + start;
+}
 
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'U' || event.key === 'u') {
-        
-        createUnitAtTile(getRandomInt(0, 31), getRandomInt(0,31));
-    }
-  });
