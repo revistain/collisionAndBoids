@@ -63,7 +63,7 @@ class MouseManager extends Drawable{
         const right = Math.max(this.currentPos.x, this.pos.x);
         const down = Math.max(this.currentPos.y, this.pos.y);
 
-        return quadTreeQuery(top, left, down, right);
+        return queryQuadTreeByBox(top, left, down, right);
     }
     
     draw() {
@@ -81,5 +81,11 @@ function removeSelected(){
     for(let obj of MouseManager.selected){
         removeObjectFromQuadTree(obj);
         obj.remove();
+    }
+}
+
+function logSelected(){
+    for(let obj of MouseManager.selected){
+        console.log("log:: ", obj);
     }
 }

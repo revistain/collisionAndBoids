@@ -42,6 +42,7 @@
     <p>Press U to create, Drag to remove!</p>
     <button id="gridToggle">그리드 토글</button>
     <button id="removeSelected">선택된것 삭제</button>
+    <button id="logSelected">선택된것 출력</button>
     
     <script>
         const buttonGrid = document.getElementById('gridToggle');
@@ -51,6 +52,10 @@
         const buttonRemove = document.getElementById('removeSelected');
         buttonRemove.addEventListener('click', () => {
             removeSelected();
+        });
+        const buttonlog = document.getElementById('logSelected');
+        buttonlog.addEventListener('click', () => {
+            logSelected();
         });
 
         const alignSlider = document.getElementById('alignSlider');

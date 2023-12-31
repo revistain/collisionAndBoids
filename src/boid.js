@@ -1,8 +1,8 @@
 class Boid extends Movable{
+    static GridOn = false;
     constructor(pos, align=0.001, cohesion=0.001, separation=0.05) {
         const initSpeed = new Vector2(getRandomFloat(0.2, -0.1), getRandomFloat(0.2, -0.1));
         super(pos, 6, "circle", "red", initSpeed, 4, new Vector2(0, 0));
-        this.congnitive_distance = 100;
 
         this.align_const = align;
         this.cohesion_const = cohesion;
@@ -11,6 +11,12 @@ class Boid extends Movable{
 
     
     draw(){
+        // 디버그용 인지거리 그리기
+        if(Boid.GridOn == true){
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = 'red';
+            this.ctx.strokeRect(this.pos.x-this.perception/2, this.pos.y-this.perception/2, this.perception, this.perception);
+        }
         // 방향선 그리기
         const line_const = 3;
         this.ctx.beginPath();

@@ -4,7 +4,7 @@
 
 class Rect extends Drawable{
     static debugGridOn = false;
-    constructor(top=0, left=0, down=0, right=0) {
+    constructor(top=0, left=0, down=0, right=0, line=false) {
         /////////// for debug draw //////////////
         super(new Vector2(top, left), 0, "rect", null, right-left, down-top, false);
         /////////////////////////////////////////
@@ -19,6 +19,7 @@ class Rect extends Drawable{
         this.randomcolorA = Math.random() * 155 + 100;
         this.randomcolorB = Math.random() * 155 + 100;
         this.randomcolorC = Math.random() * 155 + 100;
+        this.line = line;
     }
 
     draw() {
@@ -28,6 +29,10 @@ class Rect extends Drawable{
             this.ctx.fillStyle = `rgba(${this.randomcolorA}, ${this.randomcolorB}, ${this.randomcolorC}, 0.2)`;
             this.ctx.strokeRect(this.left, this.top, this.right-this.left, this.down-this.top);
             this.ctx.fillRect(this.left, this.top, this.right-this.left, this.down-this.top);
+        }
+        else if(this.line === true){
+            this.ctx.strokeStyle = 'purple';
+            this.ctx.strokeRect(this.left, this.top, this.right-this.left, this.down-this.top);
         }
     }
 
@@ -91,8 +96,65 @@ function collectEmptyQuads(){
     QuadTree.instance.head._collectnulls();
 }
 
-function quadTreeQuery(top, left, down, right){
+function queryQuadTreeByBox(top, left, down, right) {
     return QuadTree.instance._Query(top, left, down, right);
+}
+
+function queryQuadTreeByRange(pos, range) {
+    return QuadTree.instance._Query(this.pos.y-range, this.pos.x-range, this.pos.y+range, this.pos.x+range);
+}
+
+function queryQuadTreeRangeWall(pos, range, sizeX, sizeY) {
+    function isOutOfBound(tileX, tileY) { return (tileX < 0 || tileX >= Canvas.instance.tileX || tileY < 0 || tileY >= Canvas.instance.tileY); }
+    const canvas = Canvas.instance;
+    const tilepixel = canvas.tilePixel;
+    const tileX = Math.floor(pos.x / tilepixel)
+    const tileY = Math.floor(pos.y / tilepixel);
+    
+    var new_top=pos.y - range, new_left=pos.x - range, new_down=pos.y + range, new_right=pos.x + range;
+    for(let i = 0; i < range/tilepixel+1; i++){
+        if(!isOutOfBound(tileX-i, tileY)) { // left
+            if(canvas.getCollisionMap(tileX-i,tileY) === canvas.tileType["wall"]) {
+                
+                new_left = (tileX-i+0.5)*tilepixel+sizeX;
+                break;
+            }
+        }
+        else break;
+    }
+    for(let i = 0; i < range/tilepixel+1; i++){    
+        if(!isOutOfBound(tileX,tileY+i)) { // down
+            if(canvas.getCollisionMap(tileX,tileY+i) === canvas.tileType["wall"]) {
+                
+                new_down = (tileY+i)*tilepixel;
+                break;
+            }
+        }
+        else break;
+    }
+    for(let i = 0; i < range/tilepixel+1; i++){   
+        if(!isOutOfBound(tileX-i,tileY)) { // right
+            if(canvas.getCollisionMap(tileX+i,tileY) === canvas.tileType["wall"]) {
+                
+                new_right = (tileX+i)*tilepixel;
+                break;
+            }
+        }
+        else break;
+    }
+    for(let i = 0; i < range/tilepixel+1; i++){    
+        if(!isOutOfBound(tileX,tileY-i))  { // up
+            if(canvas.getCollisionMap(tileX,tileY-i) === canvas.tileType["wall"]) {
+                
+                new_top = (tileY-i+0.5)*tilepixel-sizeY;
+                break;
+            }
+        }
+        else break;
+    }
+    // if(pos.debugrect != null) pos.debugrect.remove();
+    // pos.debugrect = new Rect(new_top, new_left, new_down, new_right, true);
+    return queryQuadTreeByBox(new_top, new_left, new_down, new_right); // only for radius
 }
 
 function insertToQuadTree(obj) {

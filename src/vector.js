@@ -22,6 +22,11 @@ class Vector2 {
         this.y += v.y;
         return this;
     }
+    add_var(x, y) {
+        this.x += x;
+        this.y += y;
+        return this;
+    }
     neg(){
         this.x = -this.x;
         this.y = -this.y;
@@ -80,6 +85,12 @@ class Vector2 {
     }
     dot(v) {
         return this.x * v.x + this.y * v.y;
+    }
+    getDistance(vec){
+        return Math.sqrt(this.x*vec.x + this.y*vec.y);
+    }
+    getDistance_var(x, y){
+        return Math.sqrt(this.x*x + this.y*y);
     }
 }
 

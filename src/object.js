@@ -23,7 +23,7 @@ class Drawable {
     draw() {
         if(this.style === "circle"){
             this.ctx.beginPath();
-            this.ctx.arc(this.pos.x, this.pos.y, this.radius, 0, 2 * Math.PI); // 중심 x, 중심 y, 반지름, 시작 각도, 끝 각도
+            this.ctx.arc(this.pos.x, this.pos.y, this.radius, 0, 2 * Math.PI);
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
         }
@@ -72,6 +72,7 @@ class Movable extends Drawable {
         this.moveid = Movable.counter++;
         
         this.orderState = orderType["all_move"];
+        this.perception = 100;
         this.currentQuad = null;
         this.neighbors = null;
         insertToQuadTree(this);
@@ -84,10 +85,8 @@ class Movable extends Drawable {
 
     }
     getNeighbors(){
-        this.neighbors = quadTreeQuery(this.pos.y-this.congnitive_distance,
-                                       this.pos.x-this.congnitive_distance,
-                                       this.pos.y+this.congnitive_distance,
-                                       this.pos.x+this.congnitive_distance);
+        this.neighbors = queryQuadTreeRangeWall(this.pos, this.perception, this.radius, this.radius);
+        // console.log(this.neighbors);
     }
     setFriction() {
         this.currentSpeed.mul(this.friction);
@@ -96,73 +95,101 @@ class Movable extends Drawable {
         const canvas = Canvas.instance;
         const tileX = Math.floor(this.pos.x / canvas.tilePixel);
         const tileY = Math.floor(this.pos.y / canvas.tilePixel);
+        const startPixelX = canvas.tilePixel*tileX;
+        const startPixelY = canvas.tilePixel*tileY;
         
         function isOutOfBound(tileX, tileY) { return (tileX < 0 || tileX >= Canvas.instance.tileX || tileY < 0 || tileY >= Canvas.instance.tileY); }
         // vector reflection {r = v - 2 * (v · n) * n} n은 정규화된 벡터
         // 1. 직선거리라면
         // left
-        var n = null;
+        const n = new Vector2(0, 0);
         var dist = null;
         if(!isOutOfBound(tileX-1, tileY) &&
            canvas.getCollisionMap(tileX-1, tileY) === canvas.tileType["wall"]) {
-            n = new Vector2(1, 0);
-            dist = this.pos.x - this.tilePixel*(this.tileX-1);
+            n.set(1, 0);
+            dist = this.pos.x - (startPixelX - canvas.tilePixel/2);
+            if(this.style === "circle" && this.pos.x - startPixelX < this.radius){ // for circle
+                applyReflect(n, this);
+            }
         }
         // right
-        else if(!isOutOfBound(tileX+1, tileY) &&
+        if(!isOutOfBound(tileX+1, tileY) &&
            canvas.getCollisionMap(tileX+1, tileY) === canvas.tileType["wall"]) {
-            n = new Vector2(-1, 0);
-            dist = this.tilePixel*(this.tileX+1) - this.pos.x;
+            n.set(-1, 0);
+            if(this.style === "circle" && startPixelX - this.pos.x < this.radius){ // for circle
+                applyReflect(n, this);
+            }
         }
         // up
-        else if(!isOutOfBound(tileX, tileY-1) &&
+        if(!isOutOfBound(tileX, tileY-1) &&
            canvas.getCollisionMap(tileX, tileY-1) === canvas.tileType["wall"]) {
-            n = new Vector2(0, 1);
-            dist = this.pos.y - this.tilePixel*(this.tileY-1);
+            n.set(0, 1);
+            if(this.style === "circle" && this.pos.y - startPixelY < this.radius){ // for circle
+                applyReflect(n, this);
+            }
         }
         // down
-        else if(!isOutOfBound(tileX, tileY+1) &&
+        if(!isOutOfBound(tileX, tileY+1) &&
            canvas.getCollisionMap(tileX, tileY+1) === canvas.tileType["wall"]) {
-            n = new Vector2(0, -1);
-            dist = this.tilePixel*(this.tileY+1) - this.pos.y;
+            n.set(0, -1);
+            dist = (startPixelY + canvas.tilePixel/2) - this.pos.y;
+            if(this.style === "circle" && startPixelY - this.pos.y < this.radius){ // for circle
+                applyReflect(n, this);
+            }
         }
         // 2. 대각선 처리(실제로는 거의 안 일어날듯? 낮은 확률=>그러니 좀 더 정확성 up)
-        else if(!isOutOfBound(tileX-1, tileY-1) &&
+        if(!isOutOfBound(tileX-1, tileY-1) &&
            canvas.getCollisionMap(tileX-1, tileY-1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
-            collisionPoint.set((tileX-1)*canvas.tilePixel+canvas.tilePixel/2, (tileY-1)*canvas.tilePixel+canvas.tilePixel/2);
+            collisionPoint.set(startPixelX-canvas.tilePixel/2, startPixelY-canvas.tilePixel/2);
+            dist = collisionPoint.getDistance(this.pos);
             collisionPoint.neg().add(this.pos).normalize();
-            n = collisionPoint; // dangling?
-            dist = ((this.tilePixel*this.tileX-this.pos.x) + (this.tilePixel*this.tileY-this.pos.y) / 1.4);
+            
+            if(this.style === "circle" && dist < this.radius + canvas.tilePixel/2){ // for circle
+                applyReflect(collisionPoint, this);
+            }
         }
-        else if(!isOutOfBound(tileX-1, tileY+1) &&
+        if(!isOutOfBound(tileX-1, tileY+1) &&
            canvas.getCollisionMap(tileX-1, tileY+1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
-            collisionPoint.set((tileX-1)*canvas.tilePixel+canvas.tilePixel/2, (tileY+1)*canvas.tilePixel+canvas.tilePixel/2);
+            collisionPoint.set(startPixelX-canvas.tilePixel/2, startPixelY+canvas.tilePixel*3/2);
+            dist = collisionPoint.getDistance(this.pos);
             collisionPoint.neg().add(this.pos).normalize();
-            n = collisionPoint; // dangling?
-            dist = ((this.tilePixel*this.tileX-this.pos.x) + (this.pos.y-this.tilePixel*this.tileY) / 1.4);
+            
+            if(this.style === "circle" && dist < this.radius + canvas.tilePixel/2){ // for circle
+                applyReflect(collisionPoint, this);
+            }
         }
-        else if(!isOutOfBound(tileX+1, tileY+1) &&
+        if(!isOutOfBound(tileX+1, tileY+1) &&
            canvas.getCollisionMap(tileX+1, tileY+1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
-            collisionPoint.set((tileX+1)*canvas.tilePixel+canvas.tilePixel/2, (tileY+1)*canvas.tilePixel+canvas.tilePixel/2);
+            collisionPoint.set(startPixelX+canvas.tilePixel*3/2, startPixelY+canvas.tilePixel*3/2);
+            dist = collisionPoint.getDistance(this.pos);
             collisionPoint.neg().add(this.pos).normalize();
-            n = collisionPoint; // dangling?
-            dist = ((this.pos.x-this.tilePixel*this.tileX) + (this.pos.y-this.tilePixel*this.tileY) / 1.4);
+            
+            if(this.style === "circle" && dist < this.radius + canvas.tilePixel/2){ // for circle
+                applyReflect(collisionPoint, this);
+            }
         }
-        else if(!isOutOfBound(tileX+1, tileY-1) &&
-           canvas.getCollisionMap(tileX+1, tileY-1) === canvas.tileType["wall"]) {
+        if(!isOutOfBound(tileX+1, tileY-1) &&
+            canvas.getCollisionMap(tileX+1, tileY-1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
-            collisionPoint.set((tileX+1)*canvas.tilePixel+canvas.tilePixel/2, (tileY-1)*canvas.tilePixel+canvas.tilePixel/2);
+            collisionPoint.set(startPixelX-canvas.tilePixel/2, startPixelY+canvas.tilePixel*3/2);
+            dist = collisionPoint.getDistance(this.pos);
             collisionPoint.neg().add(this.pos).normalize();
-            n = collisionPoint; // dangling?
-            dist = ((this.pos.x-this.tilePixel*this.tileX) + (this.tilePixel*this.tileY-this.pos.y) / 1.4);
+            
+            if(this.style === "circle" && dist < this.radius + canvas.tilePixel/2){ // for circle
+                applyReflect(collisionPoint, this);
+            }
         }
         //r = v - 2 * (v · n) * n
-        if(n !== null && dist < this.radius) { // if circle
-            this.currentSpeed.sub(n.mul_var(this.currentSpeed.dot(n)*2));
-
+        function applyReflect(n, _this){
+            const collideValue = n.mul_var(_this.currentSpeed.dot(n)*2);
+            const collideVector = new Vector2(collideValue.x-_this.currentSpeed.x, collideValue.y-_this.currentSpeed.y);
+            const centerVector = new Vector2(_this.pos.x-(startPixelX+canvas.tilePixel/2), _this.pos.y-(startPixelY+canvas.tilePixel/2));
+            if(collideVector.dot(centerVector) >= 0){
+                _this.currentSpeed.sub(collideValue);
+            }
         }
     }
     move() {
@@ -170,7 +197,7 @@ class Movable extends Drawable {
         this.currentSpeed = this.currentSpeed.add(this.accel);
         this.currentSpeed.limit(this.maxSpeed);
 
-        this.setFriction();
+        // this.setFriction();
         this.reflectWithWall();
         this.pos.add(this.currentSpeed);
         this.moveOffBound(this);
