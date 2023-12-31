@@ -1,7 +1,7 @@
 class Drawable {
     static counter = 1;
     static drawablelist = [];
-    constructor(pos, radius, style, color, width=0, height=0, lazyDraw=false) {
+    constructor(pos, radius, style, color, width=0, height=0, lazyDraw=false, lineWeigth) {
         if(!lazyDraw) Drawable.drawablelist.push(this);
         if(pos === null){
             this.pos = null;
@@ -17,8 +17,8 @@ class Drawable {
         this.drawid = Drawable.counter++;
         this.ctx = Canvas.instance.ctx;
 
-        if(width != 0) this.width = width;
-        if(height != 0) this.height = height;
+        this.width = width;
+        this.height = height;
     }
     draw() {
         if(this.style === "circle"){
@@ -31,10 +31,23 @@ class Drawable {
             this.ctx.fillStyle = this.color;
             this.ctx.fillRect(this.pos.x, this.pos.y,  this.width, this.height); // draw at TL
         }
+        else if(this.style === "line"){
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.pos.x, this.pos.y);
+            this.ctx.lineTo(this.pos.x+this.width, this.pos.y+this.height);
+            this.ctx.strokeStyle = this.color;
+            this.ctx.stroke();
+        }
     }
 
     remove() {
         Drawable.drawablelist = Drawable.drawablelist.filter(drawable => drawable.drawid !== this.drawid);
+    }
+}
+
+class Arrow extends Drawable {
+    constructor(pos, toward, color="green", weight){
+        super(pos, 0, "line", color, toward.x, toward.y, false, weight);
     }
 }
 
@@ -60,6 +73,7 @@ class Movable extends Drawable {
         
         this.orderState = orderType["all_move"];
         this.currentQuad = null;
+        this.neighbors = null;
         insertToQuadTree(this);
     }
     moveOffBound(movable) {
@@ -68,6 +82,12 @@ class Movable extends Drawable {
         if(movable.pos.y > Canvas.instance.pixelY) movable.pos.y -= Canvas.instance.pixelY;
         else if(movable.pos.y < 0) movable.pos.y += Canvas.instance.pixelY;
 
+    }
+    getNeighbors(){
+        this.neighbors = quadTreeQuery(this.pos.y-this.congnitive_distance,
+                                       this.pos.x-this.congnitive_distance,
+                                       this.pos.y+this.congnitive_distance,
+                                       this.pos.x+this.congnitive_distance);
     }
     setFriction() {
         this.currentSpeed.mul(this.friction);
@@ -82,65 +102,71 @@ class Movable extends Drawable {
         // 1. 직선거리라면
         // left
         var n = null;
+        var dist = null;
         if(!isOutOfBound(tileX-1, tileY) &&
            canvas.getCollisionMap(tileX-1, tileY) === canvas.tileType["wall"]) {
-            console.log("left");
             n = new Vector2(1, 0);
+            dist = this.pos.x - this.tilePixel*(this.tileX-1);
         }
         // right
         else if(!isOutOfBound(tileX+1, tileY) &&
            canvas.getCollisionMap(tileX+1, tileY) === canvas.tileType["wall"]) {
-            console.log("right");
             n = new Vector2(-1, 0);
+            dist = this.tilePixel*(this.tileX+1) - this.pos.x;
         }
         // up
         else if(!isOutOfBound(tileX, tileY-1) &&
            canvas.getCollisionMap(tileX, tileY-1) === canvas.tileType["wall"]) {
-            console.log("up");
             n = new Vector2(0, 1);
+            dist = this.pos.y - this.tilePixel*(this.tileY-1);
         }
         // down
         else if(!isOutOfBound(tileX, tileY+1) &&
            canvas.getCollisionMap(tileX, tileY+1) === canvas.tileType["wall"]) {
-            console.log("down");
             n = new Vector2(0, -1);
+            dist = this.tilePixel*(this.tileY+1) - this.pos.y;
         }
         // 2. 대각선 처리(실제로는 거의 안 일어날듯? 낮은 확률=>그러니 좀 더 정확성 up)
         else if(!isOutOfBound(tileX-1, tileY-1) &&
            canvas.getCollisionMap(tileX-1, tileY-1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
             collisionPoint.set((tileX-1)*canvas.tilePixel+canvas.tilePixel/2, (tileY-1)*canvas.tilePixel+canvas.tilePixel/2);
-            collisionPoint.neg.add(this.pos).normalize();
+            collisionPoint.neg().add(this.pos).normalize();
             n = collisionPoint; // dangling?
+            dist = ((this.tilePixel*this.tileX-this.pos.x) + (this.tilePixel*this.tileY-this.pos.y) / 1.4);
         }
         else if(!isOutOfBound(tileX-1, tileY+1) &&
            canvas.getCollisionMap(tileX-1, tileY+1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
             collisionPoint.set((tileX-1)*canvas.tilePixel+canvas.tilePixel/2, (tileY+1)*canvas.tilePixel+canvas.tilePixel/2);
-            collisionPoint.neg.add(this.pos).normalize();
+            collisionPoint.neg().add(this.pos).normalize();
             n = collisionPoint; // dangling?
+            dist = ((this.tilePixel*this.tileX-this.pos.x) + (this.pos.y-this.tilePixel*this.tileY) / 1.4);
         }
         else if(!isOutOfBound(tileX+1, tileY+1) &&
            canvas.getCollisionMap(tileX+1, tileY+1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
             collisionPoint.set((tileX+1)*canvas.tilePixel+canvas.tilePixel/2, (tileY+1)*canvas.tilePixel+canvas.tilePixel/2);
-            collisionPoint.neg.add(this.pos).normalize();
+            collisionPoint.neg().add(this.pos).normalize();
             n = collisionPoint; // dangling?
+            dist = ((this.pos.x-this.tilePixel*this.tileX) + (this.pos.y-this.tilePixel*this.tileY) / 1.4);
         }
         else if(!isOutOfBound(tileX+1, tileY-1) &&
            canvas.getCollisionMap(tileX+1, tileY-1) === canvas.tileType["wall"]) {
             const collisionPoint = new Vector2();
             collisionPoint.set((tileX+1)*canvas.tilePixel+canvas.tilePixel/2, (tileY-1)*canvas.tilePixel+canvas.tilePixel/2);
-            collisionPoint.neg.add(this.pos).normalize();
+            collisionPoint.neg().add(this.pos).normalize();
             n = collisionPoint; // dangling?
+            dist = ((this.pos.x-this.tilePixel*this.tileX) + (this.tilePixel*this.tileY-this.pos.y) / 1.4);
         }
         //r = v - 2 * (v · n) * n
-        if(n !== null) {
+        if(n !== null && dist < this.radius) { // if circle
             this.currentSpeed.sub(n.mul_var(this.currentSpeed.dot(n)*2));
-            console.log(n.mul_var(this.currentSpeed.dot(n)*2));
+
         }
     }
     move() {
+        if(!this.neightbors) this.getNeighbors();
         this.currentSpeed = this.currentSpeed.add(this.accel);
         this.currentSpeed.limit(this.maxSpeed);
 
@@ -152,6 +178,8 @@ class Movable extends Drawable {
             removeObjectFromQuadTree(this);
             insertToQuadTree(this);
         }
+
+        this.neighbors = null;
     }
     remove() {
         Movable.movablelist = Movable.movablelist.filter(movable => movable.moveid !== this.moveid);

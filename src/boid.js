@@ -2,20 +2,14 @@ class Boid extends Movable{
     constructor(pos, align=0.001, cohesion=0.001, separation=0.05) {
         const initSpeed = new Vector2(getRandomFloat(0.2, -0.1), getRandomFloat(0.2, -0.1));
         super(pos, 6, "circle", "red", initSpeed, 4, new Vector2(0, 0));
-        this.neighbors = null;
-        this.congnitive_distance = 50;
+        this.congnitive_distance = 100;
 
         this.align_const = align;
         this.cohesion_const = cohesion;
         this.separation_const = separation;
     }
 
-    getNeighbors(){
-        this.neighbors = quadTreeQuery(this.pos.y-this.congnitive_distance,
-                                       this.pos.x-this.congnitive_distance,
-                                       this.pos.y+this.congnitive_distance,
-                                       this.pos.x+this.congnitive_distance);
-    }
+    
     draw(){
         // 방향선 그리기
         const line_const = 3;
@@ -29,7 +23,7 @@ class Boid extends Movable{
     }
 
     move(){
-        this.getNeighbors();
+        if(!this.neightbors) this.getNeighbors();
         let align_force = new Vector2(0, 0);
         let cohesion_force = new Vector2(0, 0);
         const orderstate = this.orderState;

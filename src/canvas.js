@@ -1,7 +1,13 @@
 document.addEventListener('keydown', function(event) {
     if (event.key === 'U' || event.key === 'u') {
-        
-        createUnitAtTile(getRandomInt(0, Canvas.instance.tileX - 1), getRandomInt(0,Canvas.instance.tileY - 1));
+        while(true) {
+            const randX = getRandomInt(0, Canvas.instance.tileX - 1);
+            const randY = getRandomInt(0, Canvas.instance.tileY - 1);
+            if(Canvas.instance.getCollisionMap(randX, randY) !== Canvas.instance.tileType["wall"]){
+                createUnitAtTile(randX,randY);
+                break;
+            }
+        }
     }
  });
 

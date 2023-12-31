@@ -7,6 +7,7 @@ class Vector2 {
     set(x, y){
         this.x = x;
         this.y = y;
+        return this;
     }
     equals(x, y){
         return (this.x == x && this.y == y);
@@ -19,6 +20,11 @@ class Vector2 {
     add(v) {
         this.x += v.x;
         this.y += v.y;
+        return this;
+    }
+    neg(){
+        this.x = -this.x;
+        this.y = -this.y;
         return this;
     }
     sub(v) {
