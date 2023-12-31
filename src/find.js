@@ -8,6 +8,7 @@ class Rect extends Drawable{
         /////////// for debug draw //////////////
         super(new Vector2(top, left), 0, "rect", null, right-left, down-top, false);
         /////////////////////////////////////////
+        this.visible = true; // 잘못된 구성의 결과물
         this.top = top;
         this.left = left;
         this.down = down;
@@ -22,7 +23,8 @@ class Rect extends Drawable{
 
     draw() {
         // 생각보다 그리드 그리는게 성능에 영향을 많이 끼치네
-        if(Rect.debugGridOn){
+        if(Rect.debugGridOn && this.visible){
+            this.ctx.strokeStyle = 'black';
             this.ctx.fillStyle = `rgba(${this.randomcolorA}, ${this.randomcolorB}, ${this.randomcolorC}, 0.2)`;
             this.ctx.strokeRect(this.left, this.top, this.right-this.left, this.down-this.top);
             this.ctx.fillRect(this.left, this.top, this.right-this.left, this.down-this.top);
@@ -134,7 +136,11 @@ class QuadNode {
         
         leafNode.objects.push(obj);
         if(this.depth < QuadTree.instance.MAX_DEPTH && leafNode.objects.length >= leafNode.capacity) {
+            this.rect.visible = false;
             leafNode.subdivide();
+        }
+        else{
+            this.rect.visible = true;
         }
     }
     contains(drawable) {

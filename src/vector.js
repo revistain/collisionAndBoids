@@ -31,6 +31,11 @@ class Vector2 {
         this.y *= scalar;
         return this;
     }
+    mul(v) {
+        this.x *= v.x;
+        this.y *= v.y;
+        return this;
+    }
     div(vec){
         if(vec.x === 0 || vec.y === 0) return;
         this.x /= vec.x;
@@ -61,7 +66,14 @@ class Vector2 {
     }
     normalize() {
         const mag = this.magnitude();
-        return mag > 0 ? new Vector2(this.x / mag, this.y / mag) : new Vector2();
+        if(mag > 0) {
+            this.x /= mag;
+            this.y /= mag;
+        }
+        return this;
+    }
+    dot(v) {
+        return this.x * v.x + this.y * v.y;
     }
 }
 

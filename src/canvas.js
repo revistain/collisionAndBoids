@@ -28,10 +28,12 @@ class Canvas {
         this.canvas.height = this.pixelY;
         this.animate = this.animate.bind(this);
     }
-    setCollideMap(typestring, tileX, tileY, amountX, amountY) {
+    setCollisionMap(typestring, tileX, tileY, amountX, amountY) {
         for(let i = 0; i < amountX; i++)  this.collideMap[tileX+i+tileY*this.tileY] = this.tileType[typestring];
         for(let i = 0; i < amountY; i++)  this.collideMap[tileX+(tileY+i)*this.tileY] = this.tileType[typestring];
-        console.log(this.collideMap);
+    }
+    getCollisionMap(tileX, tileY) {
+        return this.collideMap[tileX + this.tileY*tileY];
     }
 
     startLoop() {
@@ -53,8 +55,8 @@ class Canvas {
 
     displayFPS(){
         this.ctx.fillStyle = "black";
-        this.ctx.font = "16px Arial";
-        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
+        this.ctx.font = "20px Arial";
+        this.ctx.fillText(`FPS: ${this.fps}`, 50, 50);
     }
 
     draw() {
@@ -83,8 +85,21 @@ window.onload = function() {
     const qt = new QuadTree();
     const mm = new MouseManager();
     
-    // createUnitAtTile(15, 15);
-    // createWallAtTile(0, 0, 1, 3);
+    createWallAtTile(0, 0, 64, 1);
+    createWallAtTile(0, 63, 64, 1);
+    createWallAtTile(0, 0, 1, 64);
+    createWallAtTile(63, 0, 1, 64);
+
+    createWallAtTile(0, 16, 48, 1);
+    createWallAtTile(48, 16, 1, 16);
+
+    createWallAtTile(16, 48, 48, 1);
+    createWallAtTile(16, 32, 1, 16);
+
+    createWallAtTile(16, 32, 8, 1);
+    createWallAtTile(41, 32, 8, 1);
+    
+    
     
     canvas.startLoop();
 };

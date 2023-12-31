@@ -16,39 +16,55 @@ class Boid extends Movable{
                                        this.pos.y+this.congnitive_distance,
                                        this.pos.x+this.congnitive_distance);
     }
+    draw(){
+        // 방향선 그리기
+        const line_const = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.pos.x, this.pos.y);
+        this.ctx.lineTo(line_const*this.currentSpeed.x+this.pos.x, line_const*this.currentSpeed.y+this.pos.y);     // (200, 200)까지 선을 그림
+        this.ctx.strokeStyle = 'blue';
+        this.ctx.stroke();
+        
+        super.draw();
+    }
 
     move(){
         this.getNeighbors();
         let align_force = new Vector2(0, 0);
         let cohesion_force = new Vector2(0, 0);
-        for(let near of this.neighbors){
+        const orderstate = this.orderState;
+            for(let near of this.neighbors){
             if(near == this) continue;
-            // alignment
-            align_force.add(near.currentSpeed);
+            if(orderstate == orderType["all_move"]){
+                // alignment
+                align_force.add(near.currentSpeed);
 
-            // cohesion
-            cohesion_force.add(near.pos);
-            cohesion_force.sub(this.pos);
-
+                // cohesion
+                cohesion_force.add(near.pos);
+                cohesion_force.sub(this.pos);
+            }
             // separation(정석,slow)
-            const dist = Math.sqrt((near.pos.x-this.pos.x)*(near.pos.x-this.pos.x) + (near.pos.y-this.pos.y)*(near.pos.y-this.pos.y));
-            if(dist != 0){
-                let separation_force = new Vector2(0, 0);
-                separation_force.add(this.pos);
-                separation_force.sub(near.pos);
-                separation_force.mul_var((near.separation_const+this.separation_const)/dist);
-                this.applyForce(separation_force)
+            if(orderstate != orderType["stop"]){
+                const dist = Math.sqrt((near.pos.x-this.pos.x)*(near.pos.x-this.pos.x) + (near.pos.y-this.pos.y)*(near.pos.y-this.pos.y));
+                if(dist != 0){
+                    let separation_force = new Vector2(0, 0);
+                    separation_force.add(this.pos);
+                    separation_force.sub(near.pos);
+                    separation_force.mul_var((near.separation_const+this.separation_const)/dist);
+                    this.applyForce(separation_force)
+                }
             }
         }
-
-        // alignment
-        align_force.div_var(this.neighbors.length);
-        this.applyForce(align_force.mul_var(this.align_const));
-
-        // cohesion
-        cohesion_force.div_var(this.neighbors.length);
-        this.applyForce(cohesion_force.mul_var(this.cohesion_const));
         
+        if(orderstate == orderType["all_move"]){
+            // alignment
+            align_force.div_var(this.neighbors.length);
+            this.applyForce(align_force.mul_var(this.align_const));
+
+            // cohesion
+            cohesion_force.div_var(this.neighbors.length);
+            this.applyForce(cohesion_force.mul_var(this.cohesion_const));
+        }
         super.move();
     }
 }
